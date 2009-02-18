@@ -156,10 +156,10 @@ class Uploads
     key = key.gsub('"','') if key
     file_path = upload_path(key)
 
-    puts "check file: #{file_path}"
+    #puts "check file: #{file_path}"
     if file_path and File.exist?(file_path)
-      puts "recieved upload for #{key}"
-      puts "content range header: #{env['HTTP_CONTENT_RANGE'].inspect}"
+      #puts "recieved upload for #{key}"
+      puts "#{key} - content range header: #{env['HTTP_CONTENT_RANGE'].inspect}"
       if request.content_length.to_i > 0 and env["HTTP_CONTENT_RANGE"]
         return upload_part(key, file_path, request, env) # recieve the bytes and store
       else

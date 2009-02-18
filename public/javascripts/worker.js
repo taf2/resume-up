@@ -154,15 +154,11 @@ UploadRequet.prototype = {
 
     // keep the length within the bounds of the file.blob.length
     var length = this.chunkSize;
-    // compute next content length or chunk size
-    if( this.chunkSize > this.bytesToSend ) { // if chunk size is greater then what we have left to send use bytesToSend
-      length = this.bytesToSend; 
-      this.bytesToSend = 0;
+    // clamp the length to make sure it doesn't exceed the totalSize
+    if( (offsetByte + length) > this.totalSize ) {
+      length = this.totalSize - offsetByte; // clamp
     }
-    else {
-      this.bytesToSend -= this.chunkSize;
-    }
-    
+ 
     // create a new request object
     this.request = google.gears.factory.create('beta.httprequest');
     this.request.open("POST", "/upload");
@@ -171,9 +167,8 @@ UploadRequet.prototype = {
     // set the If-Match: "this.tagId"
     this.request.setRequestHeader("If-Match", this.tagId);
 
-    
     // Content-Range: offsetByte + '-' + (offsetByte + (length-1)) + '/' + this.totalSize;
-    var range = offsetByte + "-" + (offsetByte + (length - 1)) + "/" + this.totalSize;
+    var range = offsetByte + "-" + (offsetByte + length ) + "/" + this.totalSize;
     this.request.setRequestHeader("Content-Range", range);
 
     // listen for network activity, this way we can update the UI thread when while chunkSize is transferring
@@ -279,7 +274,7 @@ var uploadManager = new UploadManager();
 google.gears.workerPool.onmessage = function(a, b, message) {
   var type = message.body.type;
   var id = message.body.id;
-  google.gears.workerPool.sendMessage({id: id, status:"Recieved message: " + type}, message.sender);
+  //google.gears.workerPool.sendMessage({id: id, status:"Recieved message: " + type}, message.sender);
   switch( type ) {
   case "upload:new":
     var uploader = new UploadRequet(id, message.body.file, google.gears.workerPool, message.sender);

@@ -89,7 +89,7 @@ FileSelector = Class.create({
   //
   pauseResume: function(e,button,id)
   {
-    console.log("pause:" + button + ", " + id);
+    //console.log("pause:" + button + ", " + id);
     if( button.value == "Pause" ) { // send pause
       button.value = "Resume";
       this.workerPool.sendMessage({type:"upload:pause", id: id}, this.workerId);
