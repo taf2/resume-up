@@ -1,8 +1,11 @@
 //
-// we're going to send the file in small chunks, so we'll be using many 
-// xhr requests, the server will handle piecing the files back together 
-// this is a naive implemenation of what is described here:
+// User selects multiple files, Sees a progress bar for each file.
+// In background worker pool, each file is uploaded in many small chunks.
+// A server process will handle piecing the files back together 
+// This implementation was inspired by:
 // http://code.google.com/p/gears/wiki/ResumableHttpRequestsProposal
+//
+// Author: Todd A. Fisher <todd.fisher@gmail.com>
 //
 FileSelector = Class.create({
   initialize: function(form) {
@@ -16,17 +19,43 @@ FileSelector = Class.create({
 
     // create  worker pool to distribute each request too
     this.workerPool = google.gears.factory.create('beta.workerpool');
-    this.workerPool.onmessage = this.uploadProgress.bind(this);
+    this.workerPool.onmessage = this.messageCallback.bind(this);
     this.workerId = this.workerPool.createWorkerFromUrl("/javascripts/worker.js");
   },
+  //
+  // User clicked select files
+  //  - opens the multiple select file picker using the currently selected filters
+  //
   selectFiles: function(e) {
     var desktop = google.gears.factory.create('beta.desktop');
     desktop.openFiles(this.selectedFiles.bind(this), { filter: this.filter });
   },
-  uploadProgress: function(a, b, message) {
+  messageCallback: function(a, b, message ) {
+    switch(message.body.type) {
+    case 'progress':
+      this.uploadProgress(message);
+      break;
+    case 'error':
+      this.uploadError(message,true);
+      break;
+    default:
+      this.uploadError(message,false);
+      break;
+    }
+  },
+  uploadError: function(message, expected)
+  {
+    console.error(message.body);
+    console.error(message.body.status);
+  },
+  //
+  // display progress events
+  //   - worker.js sends these messages to notify us of the current upload status
+  //
+  uploadProgress: function(message) {
     var id = message.body.id;
     var progress = message.body.progress;
-    console.log("(" + message.body.id + ")uploading: " + message.body.status + " percent complete: " + progress );
+    //console.log("(" + message.body.id + ")uploading: " + message.body.status + " percent complete: " + progress );
     var fileData = this.files[id];
     var li = fileData.li;
     var max = parseInt(li.down(".progress").style.width) - 2;
@@ -42,14 +71,31 @@ FileSelector = Class.create({
     var progressFrame = $("progress-frame").innerHTML;
     for( var i = 0, len = files.length; i < len; ++i ) {
       var file = files[i];
-      console.log(file.name);
+      //console.log(file.name);
       var li = document.createElement("li");
       li.innerHTML = progressFrame;
       li.down(".rtp").innerHTML = file.name + ": 0%";
       li.down(".progress-frame").style.display = "";
+      // attach listener for pause button
+      var pauseResumeButton = li.down(".upload-pause-resume");
+      pauseResumeButton.observe("click", this.pauseResume.bindAsEventListener(this, pauseResumeButton,i));
       this.selectFiles.appendChild(li);
       this.files.push( {li:li, file: files[i]} ); // track the file
-      this.workerPool.sendMessage({file: file, id: i}, this.workerId);
+      this.workerPool.sendMessage({type:"upload:new", file: file, id: i}, this.workerId);
+    }
+  }, 
+  //
+  // user clicked the pause button
+  //
+  pauseResume: function(e,button,id)
+  {
+    console.log("pause:" + button + ", " + id);
+    if( button.value == "Pause" ) { // send pause
+      button.value = "Resume";
+      this.workerPool.sendMessage({type:"upload:pause", id: id}, this.workerId);
+    } else { // send resume
+      button.value = "Pause";
+      this.workerPool.sendMessage({type:"upload:resume", id: id}, this.workerId);
     }
   }
 });

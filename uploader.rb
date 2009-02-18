@@ -253,9 +253,9 @@ protected
   # Content-Length: 0
   # Range: 0-42
   #
-  def upload_status(file_path, env)
+  def upload_status(key, file_path, env)
     length = File.size(file_path)
-    [308, {'ETag'=>key, 'Range' => "0-#{length}" },'']
+    [308, {'ETag' => key, 'Range' => "0-#{length}" },'']
   end
 
   def error(status,e)
