@@ -225,8 +225,7 @@ protected
   # [bytes 0-99]
   #
   def upload_part(key, file_path, request, env)
-    buffer = request.body.read
-    File.open( file_path, "a") { |f| f.write( buffer ) }
+    File.open( file_path, "a") { |f| f.write( request.body.read ) }
     length = File.size(file_path)
     final_length = env["HTTP_CONTENT_RANGE"].gsub(/.*\//,'').to_i
     if length == final_length
