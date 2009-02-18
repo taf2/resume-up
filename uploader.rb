@@ -92,14 +92,6 @@ Content-Length: 10
   require 'rubygems'
 #end
 
-gem 'erubis'
-gem 'thin'
-gem 'uuidtools'
-
-require 'erubis'
-require 'thin'
-require 'uuidtools'
-
 ROOT_PATH=File.dirname(File.expand_path(__FILE__))
 VIEW_PATH=File.join(ROOT_PATH,'views')
 PUBLIC_FILES=File.join(ROOT_PATH,'public')
@@ -287,10 +279,30 @@ class Layout
 end
 
 require 'getoptlong'
-require 'rdoc/usage'
+begin
+  require 'rdoc/usage'
+rescue LoadError => e
+  STDERR.puts "--help, -h require rdoc"
+end
 
 class App
   def initialize
+    # initialize the gems
+    gems = ['erubis', 'thin', 'uuidtools']
+    gems.each do|g|
+      begin
+        gem g # add the gem to the load path
+        require g # require the gem source files
+      rescue Gem::LoadError => e
+        STDERR.puts "Missing required gem:\n\t#{g}\n"
+        STDERR.puts "The following are required:\n"
+        gems.each do|ge|
+          STDERR.puts "\t#{ge}"
+        end
+        exit(1)
+      end
+    end
+
     @opts = GetoptLong.new(
       [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
       [ '--port', '-p', GetoptLong::REQUIRED_ARGUMENT ],
@@ -305,7 +317,12 @@ class App
     @opts.each do |opt, arg|
       case opt
       when '--help'
-        RDoc::usage
+        if defined?(RDoc)
+          RDoc::usage
+        else
+          STDERR.puts "missing ruby rdoc"
+        end
+        exit(0)
       when '--daemonize'
         @daemonize = true
       when '--port'
