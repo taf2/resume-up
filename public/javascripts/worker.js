@@ -49,7 +49,6 @@ UploadRequet = function(id, file, pool, workerId) {
   this.chunkSize = 1024 * 1024; // send files in 1 MB chunk size
   this.byteOffset = 0; // track the current byte offset in this.file
   this.totalSize = this.file.blob.length; // total bytes to transfer of this.file
-  this.bytesToSend = this.totalSize; // how many more bytes to send, default is the totalSize
 }
 UploadRequet.prototype = {
   //
