@@ -1,0 +1,41 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <title>Anerian Services</title>
+  <link href="/stylesheets/style.css" media="screen" rel="stylesheet" type="text/css" />
+  <script type="text/javascript" src="/javascripts/protoculous-effects-shrinkvars.js"></script>
+  <script type="text/javascript" src="/javascripts/upload.js?cb=<%= Time.now.to_i %>"></script>
+</head>
+<body>
+<!--[if IE]><div class="ie"><![endif]-->
+  <!--[if lt IE 7.]><div class="ie6"><![endif]-->
+  <div class="outer-wrapper">
+    <div class="container">
+      <div class="span-24 header">
+        <h1 class="logo-brand"><a href="/"><span>Anerian Services</span></a></h1>
+        <div class="span-24 navigation">
+        </div>
+      </div>
+      <div class="span-24">
+        <div style="margin:10px;"></div>
+        <div id="status-bar"></div>
+        <%#= catch_content :for_layout  %>
+        <%= content_body %>
+      </div>
+      <hr/>
+      <div class="footer">
+        <a class="logo" href="http://www.anerian.com/"><span>Anerian LLC</span></a>
+      </div>
+      <div id="_window" style="display:none">
+        <div class="content">
+          <div class="body">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!--[if lt IE 7.]></div><![endif]-->
+<!--[if IE]></div><![endif]-->
+</body>
+</html>

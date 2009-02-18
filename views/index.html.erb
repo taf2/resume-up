@@ -1,0 +1,23 @@
+<div id="upload-forms">
+  <div id="progress-frame">
+    <div class="progress-frame" style="display:none">
+      <div class="progress" style="margin-bottom:10px; margin-right:10px; float:left; width: 402px; border: 1px solid #CEE1EF">
+        <div class="bar" style="width: 1px; background-color: #CEE1EF; border: 1px solid white">
+          <div class="tp"></div>
+          <div style="text-align:center;width:400px;" class="rtp">0%</div>
+        </div>
+      </div>
+      <div class="clear"></div>
+    </div>
+  </div>
+
+  <form id="upload-form" action="/upload" method="post">
+    <fieldset>
+      <h3>Uploads</h3>
+      <ul class="selected-files"></ul>
+      <div class="controls">
+        <input class="file-input" type="button" name="new_file_path" value="Select files"/>
+      </div>
+    </fieldset>
+  </form>
+</div>
