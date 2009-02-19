@@ -97,6 +97,10 @@ UploadRequet.prototype = {
     var progress = offsetByte / this.totalSize;
     this.pool.sendMessage({type:'progress', id: this.id, status:status, progress:progress, filename: this.file.name}, this.workerId);
   },
+  sendComplete: function( response )
+  {
+    this.pool.sendMessage({type:'complete', id: this.id, response:response, filename: this.file.name}, this.workerId);
+  },
   sendError: function( status )
   {
     this.pool.sendMessage({type:'error', id: this.id, status:status, filename: this.file.name}, this.workerId);
@@ -205,9 +209,11 @@ UploadRequet.prototype = {
   },
   uploadCompleted: function() 
   {
+    var response = this.request.responseText;
     this.request = null;
     this.completed = true;
     this.sendProgress(this.file.name, this.totalSize );
+    this.sendComplete(response);
   },
   trackRequest: function(callback)
   {

@@ -30,6 +30,11 @@ FileSelector = Class.create({
     var desktop = google.gears.factory.create('beta.desktop');
     desktop.openFiles(this.selectedFiles.bind(this), { filter: this.filter });
   },
+  //
+  // receive messages from workers
+  //  - progress: refresh the UI with new progress
+  //  - error: report errors sent from workers
+  //
   messageCallback: function(a, b, message ) {
     switch(message.body.type) {
     case 'progress':
@@ -37,6 +42,9 @@ FileSelector = Class.create({
       break;
     case 'error':
       this.uploadError(message,true);
+      break;
+    case 'complete':
+      this.uploadComplete(message);
       break;
     default:
       this.uploadError(message,false);
@@ -66,22 +74,18 @@ FileSelector = Class.create({
 
     status.innerHTML = fileData.file.name + " (" + percent + "%)";
   },
+  uploadComplete: function(message) {
+    var id = message.body.id;
+    var fileData = this.files[id];
+    var li = fileData.li;
+    li.innerHTML = "Completed: " + fileData.file.name;
+  },
   selectedFiles: function(files) {
     this.files = [];
     var progressFrame = $("progress-frame").innerHTML;
     for( var i = 0, len = files.length; i < len; ++i ) {
       var file = files[i];
 
-      for( var a in file ) {
-        console.log(a);
-      }
-      console.log(file.blob.length);
-      console.log(file.blob.name);
-      for( var i = 0; i < file.blob.length; ++i ) {
-        var part = file.blob[i];
-        console.log(hex_md5(part));
-      }
-      break;
       var li = document.createElement("li");
       li.innerHTML = progressFrame;
       li.down(".rtp").innerHTML = file.name + ": 0%";
@@ -95,7 +99,7 @@ FileSelector = Class.create({
     }
   }, 
   //
-  // user clicked the pause button
+  // user clicked the pause or resume button
   //
   pauseResume: function(e,button,id)
   {
