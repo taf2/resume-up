@@ -151,7 +151,7 @@ class Uploads
     #puts "check file: #{file_path}"
     if file_path and File.exist?(file_path)
       #puts "recieved upload for #{key}"
-      puts "#{key} - content range header: #{env['HTTP_CONTENT_RANGE'].inspect}"
+      #puts "#{key} - content range header: #{env['HTTP_CONTENT_RANGE'].inspect}"
       if request.content_length.to_i > 0 and env["HTTP_CONTENT_RANGE"]
         return upload_part(key, file_path, request, env) # recieve the bytes and store
       else
@@ -221,10 +221,10 @@ protected
     length = File.size(file_path)
     final_length = env["HTTP_CONTENT_RANGE"].gsub(/.*\//,'').to_i
     if length == final_length
-      puts "Completed"
+      #puts "Completed"
       return [200, {'ETag' => key}, "uploaded: #{file_path}"]
     else
-      puts "Incomplete with 0-#{length} < #{final_length}"
+      #puts "Incomplete with 0-#{length} < #{final_length}"
       return [308, {'ETag' => key, 'Range' => "0-#{length}" },'']
     end
   end
@@ -267,6 +267,9 @@ protected
   end
 end
 
+class CookieSession
+end
+
 class Layout
   def initialize(layout_path)
     @layout = File.read(layout_path)
@@ -286,7 +289,7 @@ rescue LoadError => e
 end
 
 class App
-  def initialize
+  def self.load_dependencies
     # initialize the gems
     gems = ['erubis', 'thin', 'uuidtools']
     gems.each do|g|
@@ -302,6 +305,8 @@ class App
         exit(1)
       end
     end
+  end
+  def initialize
 
     @opts = GetoptLong.new(
       [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
@@ -357,5 +362,8 @@ class App
   end
 end
 
-app = App.new
-app.execute
+if $0 == __FILE__
+  App.load_dependencies
+  app = App.new
+  app.execute
+end
