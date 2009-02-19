@@ -137,7 +137,7 @@ class Uploads
     if request.head?
       return [200,{'Content-Type' => 'text/html','Server' => 'thin'}, '']
     else
-      return [200,{'Content-Type' => 'text/html','Server' => 'thin'}, render_with_layout('index') ]
+      return [200,{'Content-Type' => 'text/html'}, render_with_layout('index') ]
     end
   rescue => e
     error(500, e)
@@ -157,8 +157,11 @@ class Uploads
       else
         return upload_status(key, file_path, env) # report how many bytes are still pending
       end
-    else
+    elsif key.nil?
       return upload_initiate(request) # create a new key
+    else
+      # HTTP_IF_MATCH  was sent but did not match any known file upload... respond with 404
+      return [404,{'Content-Type' => 'text/plain'}, "File not found" ]
     end
   rescue => e
     error(500,e)
