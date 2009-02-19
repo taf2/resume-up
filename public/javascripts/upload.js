@@ -71,7 +71,17 @@ FileSelector = Class.create({
     var progressFrame = $("progress-frame").innerHTML;
     for( var i = 0, len = files.length; i < len; ++i ) {
       var file = files[i];
-      //console.log(file.name);
+
+      for( var a in file ) {
+        console.log(a);
+      }
+      console.log(file.blob.length);
+      console.log(file.blob.name);
+      for( var i = 0; i < file.blob.length; ++i ) {
+        var part = file.blob[i];
+        console.log(hex_md5(part));
+      }
+      break;
       var li = document.createElement("li");
       li.innerHTML = progressFrame;
       li.down(".rtp").innerHTML = file.name + ": 0%";
