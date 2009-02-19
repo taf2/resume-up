@@ -2,8 +2,6 @@ require 'test/unit'
 require File.join(File.dirname(File.expand_path(__FILE__)), "..", "uploader.rb")
 App.load_dependencies
 require 'ostruct'
-#gem 'mocha'
-#require 'mocha'
 
 class UploadsTest < Test::Unit::TestCase
   def setup
@@ -74,6 +72,18 @@ class UploadsTest < Test::Unit::TestCase
 
     # cleanup
     assert File.unlink(upload_file)
+  end
+
+  def test_upload_part_to_invalid_key
+    send_body = "xxxxxxxxxxxxxxxxxxxxxxxx"
+    moch_request = OpenStruct.new({:params => {'filename' => "test"}, :body => StringIO.new(send_body) })
+    range = "0-#{send_body.size}/#{send_body.size*2}"
+    env = {"HTTP_CONTENT_RANGE" => range, "HTTP_IF_MATCH" => "a bugos made up key maybe someone is trying to attack us?" }
+    # send a made up key to the server, should get a 404 response
+    status, headers, body = @uploader.upload(moch_request, env)
+    assert_equal 404, status
+    assert_equal "text/plain", headers['Content-Type']
+    assert_equal "File not found", body
   end
 
 end
