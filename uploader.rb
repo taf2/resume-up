@@ -95,11 +95,11 @@ Content-Length: 10
 
 [response]
 =end
-begin
-  require 'minigems'
-rescue => e
+#begin
+#  require 'minigems'
+#rescue => e
   require 'rubygems'
-end
+#end
 
 ROOT_PATH=File.dirname(File.expand_path(__FILE__)).freeze
 VIEW_PATH=File.join(ROOT_PATH,'views').freeze
@@ -300,13 +300,6 @@ protected
     # read the file everytime for development ease
     erubis = Erubis::Eruby.new(File.read(File.join(VIEW_PATH,"#{view_file_name}.html.erb")))
     @layout.render({:content_body => erubis.result(variables) })
-  end
-end
-
-module ActionController
-  module Flash
-    class FlashHash
-    end
   end
 end
 
