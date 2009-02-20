@@ -115,6 +115,7 @@ class Uploads
 
   def call(env)
     request_path = env['REQUEST_PATH']
+    #puts request_path.inspect
     if request_path.match(/^\/upload.*/)
       request = Rack::Request.new(env)
       upload(request,env)
@@ -161,12 +162,14 @@ class Uploads
     key = key.gsub('"','') if key
     file_path = upload_path(key)
 
+    #puts "got key: #{key}"
+
     #puts "check file: #{file_path}"
     if file_path and File.exist?(file_path)
-      #puts "recieved upload for #{key}"
+      #puts "received upload for #{key}"
       #puts "#{key} - content range header: #{env['HTTP_CONTENT_RANGE'].inspect}"
       if request.content_length.to_i > 0 and env["HTTP_CONTENT_RANGE"]
-        return upload_part(key, file_path, request, env) # recieve the bytes and store
+        return upload_part(key, file_path, request, env) # received the bytes and store
       else
         return upload_status(key, file_path, env) # report how many bytes are still pending
       end
@@ -217,6 +220,9 @@ protected
   # Content-Length: 0
   #
   def upload_initiate(request)
+    if @authorizer
+      return @authorizer.redirect unless @authorizer.authorized?(request.env["HTTP_COOKIE"])
+    end
     key = unique_key(request.params['filename'])
     File.open( upload_path(key), "w")
     [308, {'ETag' => key},'']
@@ -238,6 +244,7 @@ protected
     final_length = env["HTTP_CONTENT_RANGE"].gsub(/.*\//,'').to_i
     if length == final_length
       #puts "Completed"
+      ObjectSpace.garbage_collect
       return [200, {'ETag' => key}, "uploaded: #{file_path}"]
     else
       #puts "Incomplete with 0-#{length} < #{final_length}"

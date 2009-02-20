@@ -1,1 +1,8 @@
 A Simple Streaming Upload Server and Client
+
+Example
+
+ruby uploader.rb --port 3003 \
+--authorizer authorizer.rb \
+--auth-url http://pub.anerian.localhost.com/check \
+--no-auth-redirect http://pub.anerian.localhost.com/login
