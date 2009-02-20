@@ -116,3 +116,46 @@ FileSelector = Class.create({
     }
   }
 });
+Object.extend(FileSelector, {
+  //
+  // create the file selector form
+  // once the DOM is ready create the selector object
+  // and call the createdCB if it's defined
+  //
+  create: function(createdCB) {
+    // write the form to the dom
+    var doc = document;
+    doc.write( '<div id="upload-forms">' );
+      doc.write( '<div id="progress-frame">' );
+        doc.write( '<div class="progress-frame" style="display:none">' );
+          doc.write( '<div class="progress" style="margin-bottom:10px; margin-right:10px; float:left; width: 402px; border: 1px solid #CEE1EF">' );
+            doc.write( '<div class="bar" style="width: 1px; background-color: #CEE1EF; border: 1px solid white">' );
+              doc.write( '<div class="tp"></div>' );
+              doc.write( '<div style="text-align:center;width:400px;" class="rtp">0%</div>' );
+            doc.write( '</div>' );
+          doc.write( '</div>' );
+          doc.write( '<input type="button" class="upload-pause-resume" value="Pause"/>' );
+          doc.write( '<div class="clear"></div>' );
+        doc.write( '</div>' );
+      doc.write( '</div>' );
+
+      doc.write( '<form id="upload-form" action="/upload" method="post">' );
+        doc.write( '<fieldset>' );
+          doc.write( '<h3>Uploads</h3>' );
+          doc.write( '<ul class="selected-files"></ul>' );
+          doc.write( '<div class="controls">' );
+            doc.write( '<input class="file-input" type="button" name="new_file_path" value="Select files"/>' );
+          doc.write( '</div>' );
+        doc.write( '</fieldset>' );
+      doc.write( '</form>' );
+    doc.write( '</div>' );
+
+    // now wait for things to be ready
+    document.observe("dom:loaded", function() {
+      var selector = new FileSelector($("upload-form"));
+      if( createdCB && Object.isFunction(createdCB) ) {
+        createdCB(selector);
+      }
+    });
+  }
+} );
