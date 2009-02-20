@@ -220,9 +220,10 @@ UploadRequet.prototype = {
     //this.sendStatus(" - for: [" + this.tagId + "] readyState: " + this.request.readyState );
     if( this.request.readyState == 4 ) {
       var status = this.request.status;
+      var headers = this.request.getAllResponseHeaders();
       //this.sendStatus(status + " - for: [" + this.tagId + "] headers: " + this.request.getAllResponseHeaders() );
-      var range = this.request.getResponseHeader("Range");
-      if( range ) {
+      if( headers.match(/Range:/) ) {
+        var range = this.request.getResponseHeader("Range");
         // parse the last range byte e.g. 0-#{number}
         offset = parseInt(range.replace(/[0-9]+-/,''));
         //this.sendStatus("for: [" + this.tagId + "] offset: " + offset );

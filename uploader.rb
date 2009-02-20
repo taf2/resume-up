@@ -217,6 +217,7 @@ protected
   #
   # HTTP/1.1 308 Resume Incomplete
   # ETag: "vEpr6barcD"
+  # Range: 0-0
   # Content-Length: 0
   #
   def upload_initiate(request)
@@ -225,7 +226,7 @@ protected
     end
     key = unique_key(request.params['filename'])
     File.open( upload_path(key), "w")
-    [308, {'ETag' => key},'']
+    [308, {'ETag' => key, 'Range' => '0-0'},'']
   end
 
   # Client initiates upload:
