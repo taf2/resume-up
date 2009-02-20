@@ -1,6 +1,6 @@
 require 'test/unit'
 require File.join(File.dirname(File.expand_path(__FILE__)), "..", "uploader.rb")
-App.load_dependencies
+App.load_app_deps
 require 'ostruct'
 
 class UploadsTest < Test::Unit::TestCase

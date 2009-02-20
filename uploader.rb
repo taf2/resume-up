@@ -20,6 +20,15 @@
 # --port x, -p x:
 #    bind to port x
 #
+# --authorizer [class], -a [class]:
+#    load a specific class to handle authorizing the initiate requests
+#
+# --auth-url [url], -c [url]:
+#    using the standard authrorizer, what host to use for checking authentication
+#
+# --no-auth-redirect [url], -x [url]:
+#    in the event authentication was denied, what url to redirect to, default is 403
+#
 # --daemonize, -d:
 #    daemonize the server process
 # --kill, -k:
@@ -86,21 +95,22 @@ Content-Length: 10
 
 [response]
 =end
-#begin
-#  require 'minigems'
-#rescue => e
+begin
+  require 'minigems'
+rescue => e
   require 'rubygems'
-#end
+end
 
-ROOT_PATH=File.dirname(File.expand_path(__FILE__))
-VIEW_PATH=File.join(ROOT_PATH,'views')
-PUBLIC_FILES=File.join(ROOT_PATH,'public')
-DATA_FILES=File.join(ROOT_PATH,'data-files')
+ROOT_PATH=File.dirname(File.expand_path(__FILE__)).freeze
+VIEW_PATH=File.join(ROOT_PATH,'views').freeze
+PUBLIC_FILES=File.join(ROOT_PATH,'public').freeze
+DATA_FILES=File.join(ROOT_PATH,'data-files').freeze
 
 # Upload Controller
 class Uploads
-  def initialize(layout)
+  def initialize(layout,authorizer=nil)
     @layout = layout
+    @authorizer = authorizer
   end
 
   def call(env)
@@ -134,6 +144,9 @@ class Uploads
   end
 
   def index(request,env)
+    if @authorizer
+      return @authorizer.redirect unless @authorizer.authorized?(env["HTTP_COOKIE"])
+    end
     if request.head?
       return [200,{'Content-Type' => 'text/html','Server' => 'thin'}, '']
     else
@@ -270,7 +283,11 @@ protected
   end
 end
 
-class CookieSession
+module ActionController
+  module Flash
+    class FlashHash
+    end
+  end
 end
 
 class Layout
@@ -292,9 +309,12 @@ rescue LoadError => e
 end
 
 class App
-  def self.load_dependencies
+  def self.load_app_deps
+    load_gems ['erubis', 'thin', 'uuidtools']
+  end
+  
+  def self.load_gems(gems)
     # initialize the gems
-    gems = ['erubis', 'thin', 'uuidtools']
     gems.each do|g|
       begin
         gem g # add the gem to the load path
@@ -314,14 +334,21 @@ class App
     @opts = GetoptLong.new(
       [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
       [ '--port', '-p', GetoptLong::REQUIRED_ARGUMENT ],
+      [ '--authorizer', '-a', GetoptLong::REQUIRED_ARGUMENT ],
+      [ '--auth-url', '-c', GetoptLong::REQUIRED_ARGUMENT ],
+      [ '--no-auth-redirect', '-x', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--daemonize', '-d', GetoptLong::NO_ARGUMENT ],
       [ '--kill', '-k', GetoptLong::NO_ARGUMENT ]
     )
-    @port = 3000
+    @port      = 3000
     @daemonize = false
+    @authorizer = nil
   end
 
   def execute
+    @load_authorizer = false
+    auth_url = "http://localhost:3000/check"
+    auth_redirect = nil
     @opts.each do |opt, arg|
       case opt
       when '--help'
@@ -331,6 +358,13 @@ class App
           STDERR.puts "missing ruby rdoc"
         end
         exit(0)
+      when '--authorizer'
+        load arg
+        @load_authorizer = true
+      when '--auth-url'
+        auth_url = arg
+      when '--no-auth-redirect'
+        auth_redirect = arg
       when '--daemonize'
         @daemonize = true
       when '--port'
@@ -344,6 +378,9 @@ class App
         exit(0)
       end
     end
+
+    @authorizer = Access::Authorizer.new(auth_url, auth_redirect) if @load_authorizer
+
     run_server
   end
 
@@ -359,14 +396,18 @@ class App
       # listen for exit to cleanup the pid
       at_exit { File.unlink("#{ROOT_PATH}/uploader.pid") }
     end
+
+    App.load_gems(Access::Authorizer.dependencies) if defined?(Access) and defined?(Access::Authorizer)
+
     layout = Layout.new(File.join(VIEW_PATH,'layout.default.html.erb'))
-    uploader = Rack::URLMap.new('/'  => Uploads.new(layout), '/upload' => Uploads.new(layout))
+    uploader = Rack::URLMap.new('/'  => Uploads.new(layout,@authorizer), '/upload' => Uploads.new(layout,@authorizer))
+
     Thin::Server.start('0.0.0.0', @port, uploader)
   end
 end
 
 if $0 == __FILE__
-  App.load_dependencies
+  App.load_app_deps
   app = App.new
   app.execute
 end
