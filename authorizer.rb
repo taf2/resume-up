@@ -24,7 +24,7 @@ module Access
       curl = Curl::Easy.new(@auth_url) do |c| 
         c.headers["Cookie"] = cookies
         c.headers["Host"] = @auth_host
-        c.verbose = true
+        #c.verbose = true
       end
       curl.perform
       (curl.body_str == "allowed")

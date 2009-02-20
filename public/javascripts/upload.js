@@ -14,7 +14,7 @@ FileSelector = Class.create({
     this.filter = []; //'text/plain', '.html'];
     this.form.down(".file-input").observe("click", this.selectFiles.bindAsEventListener(this));
     //this.form.down(".button.send").observe("click", this.sendFiles.bindAsEventListener(this));
-    this.selectFiles = this.form.down(".selected-files");
+    this.fileList = this.form.down(".selected-files");
     this.uploads = [];
 
     // create  worker pool to distribute each request too
@@ -83,17 +83,20 @@ FileSelector = Class.create({
   selectedFiles: function(files) {
     this.files = [];
     var progressFrame = $("progress-frame").innerHTML;
+
     for( var i = 0, len = files.length; i < len; ++i ) {
       var file = files[i];
 
-      var li = document.createElement("li");
+      var li = $(document.createElement("li"));
       li.innerHTML = progressFrame;
       li.down(".rtp").innerHTML = file.name + ": 0%";
       li.down(".progress-frame").style.display = "";
+
       // attach listener for pause button
       var pauseResumeButton = li.down(".upload-pause-resume");
       pauseResumeButton.observe("click", this.pauseResume.bindAsEventListener(this, pauseResumeButton,i));
-      this.selectFiles.appendChild(li);
+
+      this.fileList.appendChild(li);
       this.files.push( {li:li, file: files[i]} ); // track the file
       this.workerPool.sendMessage({type:"upload:new", file: file, id: i}, this.workerId);
     }
@@ -112,8 +115,4 @@ FileSelector = Class.create({
       this.workerPool.sendMessage({type:"upload:resume", id: id}, this.workerId);
     }
   }
-});
-
-document.observe("dom:loaded", function() {
-  var selector = new FileSelector($("upload-form"));
 });

@@ -22,3 +22,8 @@
     </fieldset>
   </form>
 </div>
+<script type="text/javascript">
+  document.observe("dom:loaded", function() {
+    var selector = new FileSelector($("upload-form"));
+  });
+</script>

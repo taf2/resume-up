@@ -244,11 +244,8 @@ protected
     length = File.size(file_path)
     final_length = env["HTTP_CONTENT_RANGE"].gsub(/.*\//,'').to_i
     if length == final_length
-      #puts "Completed"
-      ObjectSpace.garbage_collect
-      return [200, {'ETag' => key}, "uploaded: #{file_path}"]
+      return [200, {'ETag' => key}, %({"uploaded":"#{file_path}"})]
     else
-      #puts "Incomplete with 0-#{length} < #{final_length}"
       return [308, {'ETag' => key, 'Range' => "0-#{length}" },'']
     end
   end

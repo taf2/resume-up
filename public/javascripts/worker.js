@@ -221,7 +221,7 @@ UploadRequet.prototype = {
     if( this.request.readyState == 4 ) {
       var status = this.request.status;
       var headers = this.request.getAllResponseHeaders();
-      //this.sendStatus(status + " - for: [" + this.tagId + "] headers: " + this.request.getAllResponseHeaders() );
+      //this.sendError(status + " - for: [" + this.tagId + "] headers: " + this.request.getAllResponseHeaders() );
       if( headers.match(/Range:/) ) {
         var range = this.request.getResponseHeader("Range");
         // parse the last range byte e.g. 0-#{number}
