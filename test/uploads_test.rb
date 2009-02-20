@@ -67,7 +67,7 @@ class UploadsTest < Test::Unit::TestCase
     status, headers, body = @uploader.send(:upload_part, key, upload_file, moch_request, env)
     assert_equal 200, status
     assert_equal key, headers['ETag']
-    assert_equal "uploaded: #{upload_file}", body
+    assert_equal %({"uploaded":"#{upload_file}"}), body
     assert_equal send_body*2, File.read(upload_file)
 
     # cleanup

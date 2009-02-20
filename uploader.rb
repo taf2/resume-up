@@ -193,6 +193,14 @@ protected
   end
 
   #
+  # take a file name and strip of non-ascii characters
+  # and whitespace.
+  #
+  def normalize(str)
+    str.gsub(/[^\w]/,'-').squeeze('-')
+  end
+
+  #
   # generate a unique key given a filename
   #
   def unique_key(filename)
@@ -200,9 +208,15 @@ protected
     if filename
       ext = File.extname(filename)
       if ext
-        key = "#{filename.gsub(ext,'')}-#{key}#{ext}"
+        key = "#{normalize(filename)}-#{key}#{ext}"
       else
-        key = "#{filename}-#{key}"
+        # use a regex to grab it maybe?
+        sext = filename.gsub(/.*\./,'')
+        if sext
+          key = "#{normalize(filename)}-#{key}.#{sext}"
+        else
+          key = "#{normalize(filename)}-#{key}"
+        end
       end
     end
     key
@@ -225,6 +239,7 @@ protected
       return @authorizer.redirect unless @authorizer.authorized?(request.env["HTTP_COOKIE"])
     end
     key = unique_key(request.params['filename'])
+    #puts "initiate request for #{key} from #{request.params['filename']}"
     File.open( upload_path(key), "w")
     [308, {'ETag' => key, 'Range' => '0-0'},'']
   end
