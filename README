@@ -2,7 +2,10 @@ A Simple Streaming Upload Server and Client
 
 Example
 
-ruby uploader.rb --port 3003 \
---authorizer authorizer.rb \
---auth-url http://pub.anerian.localhost.com/check \
---no-auth-redirect http://pub.anerian.localhost.com/login
+ruby uploader.rb --port 3003 --authorizer authorizer.rb --auth-url http://yourhost/check --no-auth-redirect http://yourhost/login
+
+# this says use the built in authorizing and have it send an http request to /check
+# if it gets a denied response it will redirect to /login
+
+# remember in order for the authorizer to work, it forwards cookies, so the domain of the uploader and the domain of the check app
+# need to be the same.
