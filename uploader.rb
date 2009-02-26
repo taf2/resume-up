@@ -101,10 +101,10 @@ Content-Length: 10
   require 'rubygems'
 #end
 
-ROOT_PATH=File.dirname(File.expand_path(__FILE__)).freeze
-VIEW_PATH=File.join(ROOT_PATH,'views').freeze
-PUBLIC_FILES=File.join(ROOT_PATH,'public').freeze
-DATA_FILES=File.join(ROOT_PATH,'data-files').freeze
+ROOT_PATH    = File.dirname(File.expand_path(__FILE__)).freeze
+VIEW_PATH    = File.join(ROOT_PATH,'views').freeze
+PUBLIC_FILES = File.join(ROOT_PATH,'public').freeze
+DATA_FILES   = File.join(ROOT_PATH,'data-files').freeze
 
 # Upload Controller
 class Uploads
