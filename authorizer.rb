@@ -1,5 +1,15 @@
 require 'uri'
 
+#
+# Determine authentication by forwarding all the request headers
+# to a auth_url
+#
+# the auth_url is expected to respond with either
+#
+# allowed, meaning the user is authenticated
+# or
+# denied, meaning the user is not authenticated or not valid
+#
 module Access
   class Authorizer
     def initialize(auth_url,no_auth_redirect)
@@ -21,11 +31,9 @@ module Access
     end
 
     def authorized?(cookies)
-      curl = Curl::Easy.new(@auth_url) do |c| 
-        c.headers["Cookie"] = cookies
-        c.headers["Host"] = @auth_host
-        #c.verbose = true
-      end
+      curl = Curl::Easy.new(@auth_url)
+      curl.headers["Cookie"] = cookies
+      curl.headers["Host"]   = @auth_host
       curl.perform
       (curl.body_str == "allowed")
     end

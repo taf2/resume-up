@@ -259,7 +259,11 @@ protected
     length = File.size(file_path)
     final_length = env["HTTP_CONTENT_RANGE"].gsub(/.*\//,'').to_i
     if length == final_length
-      return [200, {'ETag' => key}, %({"uploaded":"#{file_path}"})]
+      if @filter
+        return @filter.apply(file_path, request.env["HTTP_COOKIE"])
+      else
+        return [200, {'ETag' => key}, %({"uploaded":"#{file_path}"})]
+      end
     else
       return [308, {'ETag' => key, 'Range' => "0-#{length}" },'']
     end
@@ -318,7 +322,7 @@ require 'getoptlong'
 begin
   require 'rdoc/usage'
 rescue LoadError => e
-  STDERR.puts "--help, -h require rdoc"
+  STDERR.puts "--help, -h requires rdoc"
 end
 
 class App
@@ -347,6 +351,8 @@ class App
     @opts = GetoptLong.new(
       [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
       [ '--port', '-p', GetoptLong::REQUIRED_ARGUMENT ],
+      [ '--filter', '-f', GetoptLong::REQUIRED_ARGUMENT ],
+      [ '--filter-url', '-u', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--authorizer', '-a', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--auth-url', '-c', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--no-auth-redirect', '-x', GetoptLong::REQUIRED_ARGUMENT ],
@@ -356,12 +362,17 @@ class App
     @port      = 3000
     @daemonize = false
     @authorizer = nil
+    @filter = nil
   end
 
   def execute
     @load_authorizer = false
+    @load_filter = false
+
     auth_url = "http://localhost:3000/check"
     auth_redirect = nil
+    filter_url = nil
+
     @opts.each do |opt, arg|
       case opt
       when '--help'
@@ -371,6 +382,11 @@ class App
           STDERR.puts "missing ruby rdoc"
         end
         exit(0)
+      when '--filter'
+        load arg
+        @load_filter = true
+      when '--filter-url'
+        filter_url = arg
       when '--authorizer'
         load arg
         @load_authorizer = true
@@ -393,6 +409,7 @@ class App
     end
 
     @authorizer = Access::Authorizer.new(auth_url, auth_redirect) if @load_authorizer
+    @filter = Filter::Hook.new(filter_url) if @load_filter
 
     run_server
   end
