@@ -31,6 +31,10 @@
 #
 # --daemonize, -d:
 #    daemonize the server process
+#
+# --pid, -P:
+#    path to drop pid file
+#
 # --kill, -k:
 #    kill a running daemonized process
 #
@@ -357,6 +361,7 @@ class App
       [ '--auth-url', '-c', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--no-auth-redirect', '-x', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--daemonize', '-d', GetoptLong::NO_ARGUMENT ],
+      [ '--pid', '-P', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--kill', '-k', GetoptLong::NO_ARGUMENT ]
     )
     @port      = 3000
@@ -368,6 +373,7 @@ class App
   def execute
     @load_authorizer = false
     @load_filter = false
+    @pid_filepath = nil
 
     auth_url = "http://localhost:3000/check"
     auth_redirect = nil
@@ -396,20 +402,31 @@ class App
         auth_redirect = arg
       when '--daemonize'
         @daemonize = true
+      when '--pid'
+        @pid_filepath = arg
+        if !@pid_filepath.match(/^\//)
+          STDERR.puts "pid file path must be absolute"
+          exit(1)
+        end
       when '--port'
         @port = arg.to_i
       when '--kill'
         if File.exist?("#{ROOT_PATH}/uploader.pid")
           Process.kill("TERM",File.read("#{ROOT_PATH}/uploader.pid").to_i)
+        elsif File.exist?(@pid_filepath)
+          Process.kill("TERM",File.read(@pid_filepath).to_i)
         else
           STDERR.puts("No pid file found at #{ROOT_PATH}/uploader.pid")
         end
         exit(0)
       end
     end
+    if @daemonize
+      @pid_filepath = "#{ROOT_PATH}/uploader.pid" if @pid_filepath.nil?
+    end
 
     @authorizer = Access::Authorizer.new(auth_url, auth_redirect) if @load_authorizer
-    @filter = Filter::Hook.new(filter_url) if @load_filter
+    @filter     = Filter::Hook.new(filter_url) if @load_filter
 
     run_server
   end
@@ -422,9 +439,9 @@ class App
       self.class.class_eval { include Daemonize }
       daemonize
       # drop the pid file
-      File.open("#{ROOT_PATH}/uploader.pid", "w"){|f| f.write(Process.pid)}
+      File.open(@pid_filepath, "w"){|f| f.write(Process.pid)}
       # listen for exit to cleanup the pid
-      at_exit { File.unlink("#{ROOT_PATH}/uploader.pid") }
+      at_exit { File.unlink(@pid_filepath) if File.exist?(@pid_filepath) }
     end
 
     App.load_gems(Access::Authorizer.dependencies) if defined?(Access) and defined?(Access::Authorizer)
