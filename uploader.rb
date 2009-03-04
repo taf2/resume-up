@@ -118,7 +118,7 @@ class Uploads
     #puts request_path.inspect
     if request_path.match(/^\/upload.*/)
       request = Rack::Request.new(env)
-      upload(request,env)
+      return upload(request,env)
     elsif request_path.match(/^\/.*/)
       real_path = File.join(PUBLIC_FILES,request_path)
       #puts "real_path: #{real_path.inspect}"
@@ -134,10 +134,10 @@ class Uploads
         else
           'application/octet-stream'
         end
-        [200,{'Content-Type' => content_type}, File.read(real_path) ]
+        return [200,{'Content-Type' => content_type}, File.read(real_path) ]
       else
         request = Rack::Request.new(env)
-        index(request,env)
+        return index(request,env)
       end
     end
   rescue => e
