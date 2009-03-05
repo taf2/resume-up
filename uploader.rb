@@ -39,6 +39,9 @@
 # --kill, -k:
 #    kill a running daemonized process
 #
+# --log, -l:
+#    path to log file
+#
 =begin
 
 Summary of HTTP flow
@@ -244,9 +247,15 @@ protected
       return @authorizer.redirect unless @authorizer.authorized?(request.env["HTTP_COOKIE"])
     end
     key = unique_key(request.params['filename'])
+    log "received upload initiate for #{key}"
     #puts "initiate request for #{key} from #{request.params['filename']}"
     File.open( upload_path(key), "w")
     [308, {'ETag' => key, 'Range' => '0-0'},'']
+  end
+
+  # log messages
+  def log(msg)
+    STDERR.puts msg
   end
 
   # Client initiates upload:
@@ -260,6 +269,7 @@ protected
   # [bytes 0-99]
   #
   def upload_part(key, file_path, request, env)
+    #log "received upload part for #{key}"
     File.open( file_path, "a") { |f| f.write( request.body.read ) }
     length = File.size(file_path)
     final_length = env["HTTP_CONTENT_RANGE"].gsub(/.*\//,'').to_i
@@ -290,6 +300,7 @@ protected
   # Range: 0-42
   #
   def upload_status(key, file_path, env)
+    log "received upload status for #{key}"
     length = File.size(file_path)
     [308, {'ETag' => key, 'Range' => "0-#{length}" },'']
   end
@@ -363,6 +374,7 @@ class App
       [ '--no-auth-redirect', '-x', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--daemonize', '-d', GetoptLong::NO_ARGUMENT ],
       [ '--pid', '-P', GetoptLong::REQUIRED_ARGUMENT ],
+      [ '--log', '-l', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--kill', '-k', GetoptLong::NO_ARGUMENT ]
     )
     @port      = 3000
@@ -374,7 +386,8 @@ class App
   def execute
     @load_authorizer = false
     @load_filter = false
-    @pid_filepath = nil
+    @pid_file = nil
+    @log_file = nil
 
     auth_url = "http://localhost:3000/check"
     auth_redirect = nil
@@ -404,9 +417,15 @@ class App
       when '--daemonize'
         @daemonize = true
       when '--pid'
-        @pid_filepath = arg
-        if !@pid_filepath.match(/^\//)
+        @pid_file = arg
+        if !@pid_file.match(/^\//)
           STDERR.puts "pid file path must be absolute"
+          exit(1)
+        end
+      when '--log'
+        @log_file = arg
+        if !File.exist?(File.dirname(@log_file))
+          STDERR.puts "error missing log file folder!"
           exit(1)
         end
       when '--port'
@@ -414,17 +433,16 @@ class App
       when '--kill'
         if File.exist?("#{ROOT_PATH}/uploader.pid")
           Process.kill("TERM",File.read("#{ROOT_PATH}/uploader.pid").to_i)
-        elsif File.exist?(@pid_filepath)
-          Process.kill("TERM",File.read(@pid_filepath).to_i)
+        elsif File.exist?(@pid_file)
+          Process.kill("TERM",File.read(@pid_file).to_i)
         else
           STDERR.puts("No pid file found at #{ROOT_PATH}/uploader.pid")
         end
         exit(0)
       end
     end
-    if @daemonize
-      @pid_filepath = "#{ROOT_PATH}/uploader.pid" if @pid_filepath.nil?
-    end
+
+    @pid_file = "#{ROOT_PATH}/uploader.pid" if @pid_file.nil? and @daemonize
 
     @authorizer = Access::Authorizer.new(auth_url, auth_redirect) if @load_authorizer
     @filter     = Filter::Hook.new(filter_url) if @load_filter
@@ -433,24 +451,27 @@ class App
   end
 
   def run_server
-    if @daemonize
-      puts "Daemonize"
-      gem 'daemons'
-      require 'daemons'
-      self.class.class_eval { include Daemonize }
-      daemonize
-      # drop the pid file
-      File.open(@pid_filepath, "w"){|f| f.write(Process.pid)}
-      # listen for exit to cleanup the pid
-      at_exit { File.unlink(@pid_filepath) if File.exist?(@pid_filepath) }
-    end
 
     App.load_gems(Access::Authorizer.dependencies) if defined?(Access) and defined?(Access::Authorizer)
 
     layout = Layout.new(File.join(VIEW_PATH,'layout.default.html.erb'))
     uploader = Rack::URLMap.new('/'  => Uploads.new(layout,@authorizer), '/upload' => Uploads.new(layout,@authorizer))
 
-    Thin::Server.start('0.0.0.0', @port, uploader)
+    log "Loading server on port: #{@port}"
+
+    server = Thin::Server.new('0.0.0.0', @port, uploader)
+    log "Logging to: #{@log_file.inspect}"
+    server.log_file = @log_file
+    server.pid_file = @pid_file
+    if @daemonize
+      server.daemonize
+    end
+    server.start
+  end
+
+  # log messages
+  def log(msg)
+    STDERR.puts msg
   end
 end
 
