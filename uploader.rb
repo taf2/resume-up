@@ -430,6 +430,7 @@ class App
         end
       when '--port'
         @port = arg.to_i
+        puts "port: #{arg} and #{arg.to_i}"
       when '--kill'
         if File.exist?("#{ROOT_PATH}/uploader.pid")
           Process.kill("TERM",File.read("#{ROOT_PATH}/uploader.pid").to_i)
