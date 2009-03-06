@@ -457,12 +457,15 @@ class App
     layout = Layout.new(File.join(VIEW_PATH,'layout.default.html.erb'))
     uploader = Rack::URLMap.new('/'  => Uploads.new(layout,@authorizer), '/upload' => Uploads.new(layout,@authorizer))
 
-    log "Loading server on port: #{@port}"
+    puts "Loading server on port: #{@port} with #{@pid_file}"
 
     server = Thin::Server.new('0.0.0.0', @port, uploader)
-    log "Logging to: #{@log_file.inspect}"
+
+    puts "Logging to: #{@log_file.inspect}"
+
     server.log_file = @log_file
     server.pid_file = @pid_file
+
     if @daemonize
       server.daemonize
     end
