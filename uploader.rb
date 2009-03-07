@@ -277,7 +277,7 @@ protected
       if @filter
         return @filter.apply(file_path, request.env["HTTP_COOKIE"])
       else
-        return [200, {'ETag' => key}, %({"uploaded":"#{file_path}"})]
+        return [200, {'ETag' => key}, %({"uploaded":"#{key}"})]
       end
     else
       return [308, {'ETag' => key, 'Range' => "0-#{length}" },'']
