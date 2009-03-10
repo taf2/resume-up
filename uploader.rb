@@ -456,16 +456,16 @@ class App
     App.load_gems(Access::Authorizer.dependencies) if defined?(Access) and defined?(Access::Authorizer)
 
     layout = Layout.new(File.join(VIEW_PATH,'layout.default.html.erb'))
-    uploader = Rack::URLMap.new('/'  => Uploads.new(layout,@authorizer), '/upload' => Uploads.new(layout,@authorizer))
+    uploader = Rack::URLMap.new('/'  => Uploads.new(layout,@authorizer))
 
     puts "Loading server on port: #{@port} with #{@pid_file}"
 
-    server = Thin::Server.new('0.0.0.0', @port, uploader)
+    server = Thin::Server.new('127.0.0.1', @port, uploader)
 
     puts "Logging to: #{@log_file.inspect}"
 
-    server.log_file = @log_file
-    server.pid_file = @pid_file
+    server.log_file = @log_file if @log_file
+    server.pid_file = @pid_file if @pid_file
 
     if @daemonize
       server.daemonize
