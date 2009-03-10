@@ -1,5 +1,3 @@
 * Possibly send a md5 check sum of each chunk for the server to verify
-* Send the a a final md5sum for the server to verify
-
-* recover from browser crashes by storing the files in a storage db or cookie?
-   - need a method to identify active transfers blobs
+* Compute the md5 check sum as the file is uploaded in parts, maybe store the partially computed checksum as a file?
+* Include file size when recovering files
