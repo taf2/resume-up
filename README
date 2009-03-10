@@ -9,3 +9,8 @@ ruby uploader.rb --port 3003 --authorizer authorizer.rb --auth-url http://yourho
 
 # remember in order for the authorizer to work, it forwards cookies, so the domain of the uploader and the domain of the check app
 # need to be the same.
+
+Dependencies:
+  client must have google gears installed
+
+  make sure to create the data-files folder
