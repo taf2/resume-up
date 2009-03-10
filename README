@@ -14,3 +14,11 @@ Dependencies:
   client must have google gears installed
 
   make sure to create the data-files folder
+
+Setup
+
+  mkdir data-files
+
+  ruby uploader.rb -p1337 
+
+  or to use the uploader from a static file, see views/static.html
