@@ -18,6 +18,9 @@
 # -h, --help:
 #    show help
 # 
+# --bind ip, -b i:
+#    bind to a specific IP Address
+# 
 # --port x, -p x:
 #    bind to port x
 #
@@ -363,10 +366,16 @@ class App
     end
   end
   def initialize
+    if !File.exist?(DATA_FILES)
+      puts "Creating #{DATA_FILES}..."
+      FileUtils.mkdir_p(DATA_FILES)
+      raise "#{DATA_FILES} must be a read/write directory" if !File.directory?(DATA_FILES)
+    end
 
     @opts = GetoptLong.new(
       [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
       [ '--port', '-p', GetoptLong::REQUIRED_ARGUMENT ],
+      [ '--bind', '-b', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--filter', '-f', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--filter-url', '-u', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--authorizer', '-a', GetoptLong::REQUIRED_ARGUMENT ],
@@ -377,6 +386,7 @@ class App
       [ '--log', '-l', GetoptLong::REQUIRED_ARGUMENT ],
       [ '--kill', '-k', GetoptLong::NO_ARGUMENT ]
     )
+    @bindip    = '127.0.0.1'
     @port      = 3000
     @daemonize = false
     @authorizer = nil
@@ -428,9 +438,10 @@ class App
           STDERR.puts "error missing log file folder!"
           exit(1)
         end
+      when '--bind'
+        @bindip = arg.to_s
       when '--port'
         @port = arg.to_i
-        puts "port: #{arg} and #{arg.to_i}"
       when '--kill'
         if File.exist?("#{ROOT_PATH}/uploader.pid")
           Process.kill("TERM",File.read("#{ROOT_PATH}/uploader.pid").to_i)
@@ -460,7 +471,7 @@ class App
 
     puts "Loading server on port: #{@port} with #{@pid_file}"
 
-    server = Thin::Server.new('127.0.0.1', @port, uploader)
+    server = Thin::Server.new(@bindip, @port, uploader)
 
     puts "Logging to: #{@log_file.inspect}"
 
